@@ -1,4 +1,4 @@
-# GIÁO ÁN AWS ARCHITECTURE
+# AWS ARCHITECTURE Personal Learning Roadmap
 ## Thiết kế Kiến trúc AWS theo Well-Architected Framework
 
 ---
