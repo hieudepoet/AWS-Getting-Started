@@ -20,7 +20,10 @@
 ### **1.2 Các dịch vụ bảo mật chính**
 
 #### **IAM (Identity and Access Management)**
-- **Khái niệm**: Quản lý danh tính và quyền truy cập
+- **Mô tả tổng quan**: Dịch vụ quản lý "ai được làm gì" trong AWS. Giống như hệ thống phân quyền trong công ty - xác định nhân viên nào có thể truy cập phòng nào, sử dụng thiết bị gì.
+- **Chức năng chính**: Tạo users, gán permissions, quản lý access keys, thiết lập MFA
+- **Sử dụng khi nào**: Mỗi khi cần kiểm soát quyền truy cập AWS resources - từ developer cần quyền deploy code đến application cần quyền đọc S3
+- **Kết quả trả về**: Allow/Deny decisions cho mỗi API call, temporary credentials cho applications
 - **Thành phần**: Users, Groups, Roles, Policies
 - **Pricing**: Miễn phí cho core features
 - **Vị trí**: Global service (không thuộc VPC)
@@ -39,13 +42,19 @@
 ```
 
 #### **MFA (Multi-Factor Authentication)**
-- **Khái niệm**: Xác thực đa yếu tố
+- **Mô tả tổng quan**: Lớp bảo mật thứ hai sau password. Giống như ATM cần cả thẻ và mã PIN - AWS cần cả password và mã từ điện thoại/thiết bị.
+- **Chức năng chính**: Tạo mã xác thực 6 số thay đổi mỗi 30 giây, yêu cầu nhập khi login
+- **Sử dụng khi nào**: Bắt buộc cho Root user, khuyến nghị cho tất cả privileged users, required cho compliance
+- **Kết quả trả về**: Token hợp lệ cho phép tiếp tục truy cập, hoặc từ chối nếu mã sai
 - **Loại**: Virtual MFA, Hardware MFA, SMS
 - **Pricing**: Miễn phí cho Virtual MFA
 - **Best Practice**: Bắt buộc cho Root user và privileged users
 
 #### **SCP (Service Control Policies)**
-- **Khái niệm**: Chính sách kiểm soát dịch vụ trong AWS Organizations
+- **Mô tả tổng quan**: "Rào chắn" cao nhất trong tổ chức AWS. Giống như quy định công ty cấm nhân viên truy cập một số trang web - SCP cấm accounts trong Organization sử dụng một số AWS services.
+- **Chức năng chính**: Đặt giới hạn tối đa cho permissions, không thể grant thêm quyền
+- **Sử dụng khi nào**: Multi-account environment, cần kiểm soát centralized, compliance requirements (VD: cấm tạo EC2 ở regions không được phép)
+- **Kết quả trả về**: Deny hoặc cho phép AWS API calls ở organization level
 - **Vị trí**: Organization level (không thuộc VPC)
 - **Pricing**: Miễn phí với AWS Organizations
 - **Ví dụ**: Ngăn chặn tạo EC2 instances ở regions không được phép
@@ -53,12 +62,20 @@
 #### **Encryption Services**
 
 **AWS KMS (Key Management Service)**
+- **Mô tả tổng quan**: "Két sắt điện tử" chứa chìa khóa mã hóa. Giống như ngân hàng giữ chìa khóa két sắt - KMS tạo, lưu trữ và quản lý encryption keys, chỉ cho phép applications được ủy quyền sử dụng.
+- **Chức năng chính**: Tạo encryption keys, mã hóa/giải mã data, rotate keys tự động, audit key usage
+- **Sử dụng khi nào**: Mã hóa EBS volumes, S3 objects, RDS databases, Lambda environment variables - bất cứ khi nào cần bảo vệ sensitive data
+- **Kết quả trả về**: Encrypted data hoặc decrypted plaintext, key metadata, audit logs
 - **Type**: Managed service
 - **Vị trí**: Regional service (không thuộc VPC)
 - **Pricing**: $1/key/month + $0.03/10,000 requests
 - **Ví dụ**: Mã hóa EBS volumes, S3 objects
 
 **TLS/ACM (Certificate Manager)**
+- **Mô tả tổng quan**: "Nhà cung cấp chứng chỉ SSL miễn phí" của AWS. Giống như CA (Certificate Authority) cấp chứng chỉ cho website - ACM tự động tạo, gia hạn SSL certificates để website hiển thị "khóa xanh" HTTPS.
+- **Chức năng chính**: Tạo SSL/TLS certificates, tự động renewal, deploy đến AWS services
+- **Sử dụng khi nào**: Website cần HTTPS, Load Balancers, CloudFront distributions, API Gateway - bất cứ khi nào cần secure communication
+- **Kết quả trả về**: Valid SSL certificate, automatic renewal notifications, certificate validation
 - **Type**: Managed service
 - **Pricing**: Miễn phí cho public certificates
 - **Vị trí**: Regional (không thuộc VPC)
@@ -67,12 +84,20 @@
 #### **Network Security**
 
 **Security Groups**
+- **Mô tả tổng quan**: "Bảo vệ cá nhân" cho từng EC2 instance. Giống như bodyguard kiểm tra từng người muốn gặp VIP - Security Group kiểm tra từng network packet muốn đến instance, chỉ cho phép traffic từ sources được phép.
+- **Chức năng chính**: Filter inbound/outbound traffic, stateful connection tracking, allow rules only
+- **Sử dụng khi nào**: Mỗi EC2 instance, RDS database, Load Balancer cần network protection - default security layer cho mọi AWS resource
+- **Kết quả trả về**: Allow/drop packets, connection state tracking, automatic return traffic allowance
 - **Khái niệm**: Stateful firewall cho EC2 instances
 - **Vị trí**: VPC level
 - **Pricing**: Miễn phí
 - **Quy tắc**: Allow rules only, stateful
 
 **NACLs (Network Access Control Lists)**
+- **Mô tả tổng quan**: "Bảo vệ khu vực" cho cả subnet. Giống như checkpoint an ninh ở cổng khu phố - kiểm tra tất cả xe ra vào, không nhớ xe nào đã qua, phải kiểm tra lại mỗi lần.
+- **Chức năng chính**: Filter traffic ở subnet level, stateless rules evaluation, both allow và deny rules
+- **Sử dụng khi nào**: Cần additional security layer, compliance requirements, block specific IP ranges ở subnet level
+- **Kết quả trả về**: Allow/deny decisions per packet, no connection state memory, separate inbound/outbound evaluation
 - **Khái niệm**: Stateless firewall cho subnets
 - **Vị trí**: Subnet level trong VPC
 - **Pricing**: Miễn phí
@@ -81,23 +106,39 @@
 #### **Threat Detection & Protection**
 
 **GuardDuty**
+- **Mô tả tổng quan**: "Thám tử AI" giám sát 24/7 tìm hoạt động đáng ngờ. Giống như hệ thống camera an ninh thông minh - phân tích patterns, phát hiện hành vi bất thường như login từ địa điểm lạ, malware communication.
+- **Chức năng chính**: Machine learning threat detection, analyze VPC Flow Logs/DNS logs/CloudTrail, generate security findings
+- **Sử dụng khi nào**: Cần continuous security monitoring, detect compromised instances, malware, cryptocurrency mining, data exfiltration
+- **Kết quả trả về**: Security findings với severity levels, detailed threat intelligence, remediation recommendations
 - **Type**: Managed threat detection
 - **Pricing**: $4.00/million events analyzed
 - **Vị trí**: Regional (không thuộc VPC)
 - **Chức năng**: ML-based threat detection
 
 **AWS Shield**
+- **Mô tả tổng quan**: "Lá chắn chống DDoS" bảo vệ website khỏi tấn công từ chối dịch vụ. Giống như hệ thống lọc traffic tự động - phát hiện và chặn hàng triệu requests độc hại trước khi chúng làm sập server.
+- **Chức năng chính**: DDoS protection, traffic filtering, attack mitigation, real-time monitoring
+- **Sử dụng khi nào**: Website/application cần protection khỏi DDoS attacks, đặc biệt public-facing services
+- **Kết quả trả về**: Filtered clean traffic, attack reports, mitigation statistics, uptime protection
 - **Standard**: Miễn phí, DDoS protection cơ bản
 - **Advanced**: $3,000/month, DDoS protection nâng cao
 - **Type**: Managed service
 
 **AWS WAF (Web Application Firewall)**
+- **Mô tả tổng quan**: "Bảo vệ thông minh" cho web applications. Giống như bouncer club kiểm tra ID và hành vi - WAF kiểm tra HTTP requests, chặn SQL injection, XSS attacks, bot traffic dựa trên rules tùy chỉnh.
+- **Chức năng chính**: HTTP/HTTPS request filtering, custom rules creation, bot detection, rate limiting
+- **Sử dụng khi nào**: Web applications cần protection khỏi OWASP Top 10 attacks, API protection, bot management
+- **Kết quả trả về**: Allow/block decisions, detailed request logs, attack statistics, custom responses
 - **Type**: Managed service
 - **Pricing**: $1/web ACL/month + $0.60/million requests
 - **Vị trí**: Edge locations (không thuộc VPC)
 - **Sử dụng**: CloudFront, ALB, API Gateway
 
 **Secrets Manager**
+- **Mô tả tổng quan**: "Két sắt mật khẩu thông minh" tự động thay đổi passwords. Giống như password manager cá nhân nhưng cho applications - lưu trữ database passwords, API keys, tự động rotate và cung cấp cho applications khi cần.
+- **Chức năng chính**: Store secrets securely, automatic rotation, fine-grained access control, audit logging
+- **Sử dụng khi nào**: Applications cần database passwords, API keys, certificates - thay thế hardcoded secrets trong code
+- **Kết quả trả về**: Encrypted secrets, rotated credentials, access logs, integration với AWS services
 - **Type**: Managed service
 - **Pricing**: $0.40/secret/month + $0.05/10,000 API calls
 - **Vị trí**: Regional (không thuộc VPC)
@@ -132,11 +173,19 @@ Internet Gateway
 ### **2.2 Strategies cho Resilience**
 
 #### **Multi-AZ Deployment**
+- **Mô tả tổng quan**: "Sao lưu tự động trong cùng thành phố". Giống như có 2 văn phòng trong cùng thành phố - nếu văn phòng chính gặp sự cố (mất điện, lũ lụt), văn phòng phụ tự động tiếp quản ngay lập tức.
+- **Chức năng chính**: Automatic failover, synchronous data replication, zero-downtime maintenance
+- **Sử dụng khi nào**: Critical applications cần high availability, databases không thể downtime, compliance requirements
+- **Kết quả trả về**: 99.95%+ uptime, automatic recovery, transparent failover cho applications
 - **Khái niệm**: Triển khai trên nhiều Availability Zones
 - **Pricing**: Không phí thêm cho architecture, chỉ trả cho resources
 - **Ví dụ**: RDS Multi-AZ (2x cost), ELB tự động multi-AZ
 
 #### **Multi-Region Deployment**
+- **Mô tả tổng quan**: "Chi nhánh ở nhiều thành phố khác nhau". Giống như công ty có văn phòng ở Hà Nội và TP.HCM - nếu Hà Nội gặp thiên tai, TP.HCM vẫn hoạt động bình thường, khách hàng không bị gián đoạn.
+- **Chức năng chính**: Geographic redundancy, disaster recovery, latency optimization, compliance với data residency
+- **Sử dụng khi nào**: Global applications, disaster recovery, regulatory compliance, improve user experience
+- **Kết quả trả về**: Geographic fault tolerance, reduced latency for global users, regulatory compliance
 - **Khái niệm**: Triển khai trên nhiều AWS Regions
 - **Pricing**: Data transfer charges giữa regions
 - **Use case**: Disaster recovery, compliance, latency optimization
@@ -148,12 +197,20 @@ Internet Gateway
 4. **Multi-Site Active/Active**: RTO seconds, RPO near-zero, cost cao nhất
 
 #### **Auto Scaling**
+- **Mô tả tổng quan**: "Quản lý nhân sự tự động". Giống như có AI quản lý - khi khách hàng đông, tự động thuê thêm nhân viên; khi vắng khách, cho nghỉ bớt để tiết kiệm lương. Luôn đảm bảo đủ người phục vụ mà không lãng phí.
+- **Chức năng chính**: Automatic capacity adjustment, health monitoring, cost optimization, performance maintenance
+- **Sử dụng khi nào**: Traffic không đoán trước, cost optimization, maintain performance during peaks, replace unhealthy instances
+- **Kết quả trả về**: Right-sized capacity, cost savings, consistent performance, automatic recovery
 - **Type**: Managed service
 - **Pricing**: Miễn phí (chỉ trả cho EC2 instances)
 - **Vị trí**: Regional, hoạt động trong VPC
 - **Scaling Policies**: Target tracking, Step scaling, Simple scaling
 
 #### **Route 53**
+- **Mô tả tổng quan**: "Hệ thống định vị thông minh toàn cầu". Giống như GPS thông minh - không chỉ chỉ đường đến địa chỉ (IP) mà còn chọn đường nhanh nhất, tránh kẹt xe (server down), thậm chí đưa khách đến chi nhánh gần nhất.
+- **Chức năng chính**: DNS resolution, health monitoring, traffic routing, domain registration
+- **Sử dụng khi nào**: Cần domain name resolution, load distribution, failover automation, geographic routing
+- **Kết quả trả về**: Fast DNS responses, automatic failover, optimized routing, high availability
 - **Type**: Managed DNS service
 - **Pricing**: $0.50/hosted zone/month + $0.40/million queries
 - **Vị trí**: Global service (không thuộc VPC)
@@ -304,15 +361,27 @@ S3 with Transfer Acceleration
 ### **4.2 Cost Management Tools**
 
 #### **AWS Cost Explorer**
+- **Mô tả tổng quan**: "Kế toán AI phân tích chi tiêu". Giống như app quản lý tài chính cá nhân - phân tích bạn tiêu tiền vào đâu nhiều nhất, dự đoán chi tiêu tháng sau, gợi ý cách tiết kiệm (như chuyển từ taxi sang xe bus).
+- **Chức năng chính**: Cost analysis, spending visualization, forecasting, rightsizing recommendations
+- **Sử dụng khi nào**: Monthly cost reviews, budget planning, cost optimization, trend analysis
+- **Kết quả trả về**: Detailed cost breakdowns, spending forecasts, optimization recommendations, cost trends
 - **Type**: Cost analysis tool
 - **Pricing**: Miễn phí cho basic reports
 - **Features**: Cost breakdown, forecasting, rightsizing recommendations
 
 #### **AWS Budgets**
+- **Mô tả tổng quan**: "Hệ thống cảnh báo chi tiêu thông minh". Giống như set ngân sách hàng tháng trên app banking - khi sắp hết tiền hoặc chi tiêu bất thường sẽ gửi thông báo, thậm chí tự động khóa thẻ (stop resources).
+- **Chức năng chính**: Budget setting, cost alerts, usage monitoring, automated actions
+- **Sử dụng khi nào**: Cost control, spending limits, department budgets, project cost management
+- **Kết quả trả về**: Budget alerts, spending notifications, automated cost controls, usage reports
 - **Pricing**: $0.02/budget/day (first 2 budgets free)
 - **Features**: Cost budgets, usage budgets, alerts
 
 #### **Savings Plans**
+- **Mô tả tổng quan**: "Gói cước trả trước giảm giá". Giống như mua gói cước điện thoại 12 tháng - cam kết dùng một lượng nhất định, được giảm giá đáng kể so với trả theo tháng. Càng cam kết lâu, giảm càng nhiều.
+- **Chức năng chính**: Commitment-based discounts, flexible usage, automatic application, significant savings
+- **Sử dụng khi nào**: Predictable workloads, long-term projects, cost optimization for steady usage
+- **Kết quả trả về**: Up to 72% cost reduction, billing simplification, usage flexibility
 - **Compute Savings Plans**: Up to 66% discount, flexible
 - **EC2 Instance Savings Plans**: Up to 72% discount, specific instance family
 - **Commitment**: 1 or 3 years
@@ -368,14 +437,18 @@ Cost-Optimized Architecture:
 ### **5.1 Amazon VPC (Virtual Private Cloud) - Khái niệm cốt lõi**
 
 #### **Khái niệm cơ bản**
-- **VPC**: Mạng ảo riêng biệt trong AWS Cloud
-- **Isolated network**: Hoàn toàn tách biệt với các VPC khác
-- **Regional service**: Trải rộng trên tất cả AZ trong region
-- **CIDR Block**: Dải IP private (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+- **VPC**: "Trung tâm dữ liệu ảo riêng" trong AWS Cloud. Giống như thuê một tầng building riêng - bạn có toàn quyền thiết kế layout, quyết định phòng nào public/private, ai được vào ra.
+- **Isolated network**: Hoàn toàn tách biệt với các VPC khác - như có tường bao quanh
+- **Regional service**: Trải rộng trên tất cả AZ trong region - như building có nhiều cánh
+- **CIDR Block**: Dải IP private (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16) - như số nhà trong khu phố riêng
 
 #### **Core Components của VPC**
 
 **Subnets**
+- **Mô tả tổng quan**: "Phòng chuyên dụng" trong VPC building. Public subnet như lobby - ai cũng có thể vào từ internet. Private subnet như phòng server - chỉ nhân viên nội bộ truy cập được.
+- **Chức năng chính**: Phân chia VPC theo chức năng và security level, định vị resources trong specific AZ
+- **Sử dụng khi nào**: Tách biệt web servers (public) và databases (private), implement security layers, distribute resources across AZs
+- **Kết quả trả về**: Isolated network segments, controlled internet access, AZ-specific placement
 - **Khái niệm**: Phân đoạn VPC theo AZ
 - **Public Subnet**: Có route đến Internet Gateway
 - **Private Subnet**: Không có route trực tiếp đến Internet
@@ -393,6 +466,10 @@ aws ec2 create-subnet --vpc-id vpc-xxx --cidr-block 10.0.2.0/24 --availability-z
 ```
 
 **Internet Gateway (IGW)**
+- **Mô tả tổng quan**: "Cổng ra vào internet" duy nhất của VPC. Giống như cổng chính của building - tất cả traffic muốn ra internet phải đi qua đây, IGW tự động "dịch" private IP thành public IP.
+- **Chức năng chính**: Enable internet connectivity, perform NAT cho public IP addresses, route traffic bidirectionally
+- **Sử dụng khi nào**: VPC cần internet access, public-facing resources như web servers, load balancers
+- **Kết quả trả về**: Internet connectivity, automatic IP translation, bidirectional traffic flow
 - **Khái niệm**: Cổng kết nối VPC với Internet
 - **Chức năng**: NAT cho public IP addresses
 - **Quy tắc**: 1 VPC = 1 IGW maximum
@@ -405,6 +482,10 @@ aws ec2 attach-internet-gateway --vpc-id vpc-xxx --internet-gateway-id igw-xxx
 ```
 
 **Route Tables**
+- **Mô tả tổng quan**: "Bản đồ chỉ đường" cho network traffic. Giống như GPS - khi có packet muốn đi đến địa chỉ nào đó, route table chỉ đường "đi qua cổng nào, theo đường nào".
+- **Chức năng chính**: Define traffic routing rules, associate với subnets, determine packet destinations
+- **Sử dụng khi nào**: Control traffic flow trong VPC, direct internet traffic qua IGW, route private traffic qua NAT Gateway
+- **Kết quả trả về**: Traffic routing decisions, packet forwarding to correct targets, network path determination
 - **Khái niệm**: Bảng định tuyến cho subnets
 - **Main Route Table**: Default cho tất cả subnets
 - **Custom Route Table**: Tạo riêng cho specific subnets
@@ -424,14 +505,18 @@ aws ec2 associate-route-table --subnet-id subnet-xxx --route-table-id rtb-xxx
 ### **5.2 NAT Gateway - Chi tiết kỹ thuật**
 
 #### **Khái niệm và chức năng**
-- **NAT (Network Address Translation)**: Dịch địa chỉ IP private sang public
-- **Mục đích**: Cho phép instances trong private subnet truy cập Internet
-- **Hướng**: Chỉ outbound, không cho phép inbound connections
-- **Managed Service**: AWS quản lý hoàn toàn
+- **NAT (Network Address Translation)**: "Người phiên dịch địa chỉ" cho private instances. Giống như receptionist - nhận requests từ nhân viên bên trong (private IP), gọi ra ngoài bằng số điện thoại công ty (public IP), rồi chuyển response về đúng người.
+- **Mục đích**: Cho phép instances trong private subnet truy cập Internet mà không expose private IP
+- **Hướng**: Chỉ outbound (từ trong ra ngoài), không cho phép inbound connections từ internet
+- **Managed Service**: AWS quản lý hoàn toàn - không cần maintain, patch, scale
 
 #### **Loại NAT Gateway**
 
 **Public NAT Gateway**
+- **Mô tả tổng quan**: "Cổng ra internet" cho private resources. Đặt trong public subnet, có Elastic IP, cho phép private instances download updates, gọi APIs bên ngoài mà không bị expose.
+- **Chức năng chính**: Translate private IPs to public IP, enable outbound internet access, block inbound connections
+- **Sử dụng khi nào**: Private instances cần internet access (software updates, API calls, downloading packages)
+- **Kết quả trả về**: Successful outbound connections, blocked inbound attempts, translated IP addresses
 - **Vị trí**: Phải đặt trong Public Subnet
 - **Elastic IP**: Bắt buộc phải có
 - **Routing**: Private Subnet → NAT Gateway → Internet Gateway → Internet
@@ -439,6 +524,10 @@ aws ec2 associate-route-table --subnet-id subnet-xxx --route-table-id rtb-xxx
 - **Pricing**: $0.045/hour + $0.045/GB processed
 
 **Private NAT Gateway**
+- **Mô tả tổng quan**: "Cầu nối nội bộ" kết nối với networks khác (không phải internet). Giống như switchboard nội bộ - chỉ kết nối với các chi nhánh khác hoặc data center on-premises.
+- **Chức năng chính**: Enable connectivity to other VPCs/on-premises, translate IPs for internal communication
+- **Sử dụng khi nào**: Multi-VPC architecture, hybrid cloud setup, internal service communication
+- **Kết quả trả về**: Successful connections to other networks, IP translation for internal traffic
 - **Vị trí**: Đặt trong Private Subnet
 - **Elastic IP**: Không cần
 - **Routing**: Chỉ đến VPC khác hoặc on-premises qua Transit Gateway/VPN
@@ -517,35 +606,53 @@ aws ec2 create-network-acl-entry \
 ### **6.1 Amazon EC2 - Compute Service**
 
 #### **Khái niệm cơ bản**
-- **EC2**: Elastic Compute Cloud - Virtual servers trong cloud
-- **Instance**: Virtual machine với CPU, memory, storage, networking
-- **AMI**: Amazon Machine Image - Template để launch instances
-- **Instance Store**: Temporary storage gắn trực tiếp với physical host
+- **EC2**: "Máy tính ảo cho thuê". Giống như thuê máy tính trong internet cafe - chọn cấu hình phù hợp (CPU mạnh, RAM nhiều), trả tiền theo giờ sử dụng, có thể tắt bật tùy ý, cài đặt software tùy thích.
+- **Instance**: Virtual machine với CPU, memory, storage, networking được định sẵn
+- **AMI**: "Ảnh chụp máy tính" - Template chứa OS và software để tạo instance mới
+- **Instance Store**: "Ổ cứng tạm thời" - mất data khi tắt máy, tốc độ cao
 
 #### **Instance Types và Use Cases**
 
 **General Purpose (Balanced)**
-- **t3/t4g**: Burstable performance, credit-based CPU
+- **t3/t4g**: "Máy tính tiết kiệm điện thông minh". Giống như laptop có chế độ tiết kiệm pin - bình thường chạy chậm để tiết kiệm, khi cần thì tăng tốc (burst), phù hợp công việc văn phòng không đều.
+  - **Chức năng chính**: Burstable CPU performance, credit-based system, cost-effective
+  - **Sử dụng khi nào**: Web servers nhỏ, development environments, low-traffic applications
+  - **Kết quả trả về**: Cost savings, adequate performance for variable workloads
   - Use case: Web servers, small databases, development
   - Pricing: $0.0104/hour (t3.micro)
-- **m5/m6i**: Balanced compute, memory, networking
+- **m5/m6i**: "Máy tính văn phòng cân bằng". Giống như PC desktop chuẩn - CPU, RAM, network đều ở mức vừa phải, phù hợp đa số công việc thông thường.
+  - **Chức năng chính**: Balanced compute, memory, networking resources
+  - **Sử dụng khi nào**: General web applications, microservices, enterprise applications
+  - **Kết quả trả về**: Consistent performance, good price-performance ratio
   - Use case: Web applications, microservices
   - Pricing: $0.096/hour (m5.large)
 
 **Compute Optimized**
-- **c5/c6i**: High-performance processors
+- **c5/c6i**: "Máy tính gaming cao cấp". Giống như PC gaming với CPU mạnh nhất - xử lý tính toán phức tạp, render video, chạy game nặng mượt mà.
+  - **Chức năng chính**: High-performance processors, optimized for CPU-intensive tasks
+  - **Sử dụng khi nào**: Scientific computing, gaming servers, high-performance web servers, machine learning inference
+  - **Kết quả trả về**: Superior CPU performance, fast processing, low latency
   - Use case: CPU-intensive applications, HPC, gaming
   - Pricing: $0.085/hour (c5.large)
 
 **Memory Optimized**
-- **r5/r6i**: High memory-to-vCPU ratio
+- **r5/r6i**: "Máy tính với RAM khủng". Giống như workstation chuyên dụng với 64GB+ RAM - xử lý datasets lớn, cache nhiều data trong memory, phù hợp databases lớn.
+  - **Chức năng chính**: High memory-to-vCPU ratio, fast memory access
+  - **Sử dụng khi nào**: In-memory databases, real-time analytics, big data processing
+  - **Kết quả trả về**: Fast data access, large dataset processing, reduced I/O bottlenecks
   - Use case: In-memory databases, real-time analytics
   - Pricing: $0.126/hour (r5.large)
-- **x1e**: Extreme memory (up to 3,904 GB)
+- **x1e**: "Siêu máy tính memory". Giống như server chuyên dụng với RAM lên đến 4TB - xử lý enterprise databases cực lớn.
+  - **Chức năng chính**: Extreme memory capacity (up to 3,904 GB)
+  - **Sử dụng khi nào**: SAP HANA, Apache Spark, large enterprise databases
+  - **Kết quả trả về**: Massive in-memory processing capability
   - Use case: SAP HANA, Apache Spark
 
 **Storage Optimized**
-- **i3**: NVMe SSD-backed instance storage
+- **i3**: "Máy tính với SSD siêu tốc". Giống như workstation gắn nhiều SSD NVMe - đọc ghi data cực nhanh, phù hợp applications cần I/O cao.
+  - **Chức năng chính**: NVMe SSD-backed instance storage, high IOPS
+  - **Sử dụng khi nào**: Distributed file systems, data warehousing, high-frequency trading
+  - **Kết quả trả về**: Ultra-fast storage access, high throughput
   - Use case: Distributed file systems, data warehousing
 
 #### **Pricing Models**
@@ -593,25 +700,49 @@ aws autoscaling create-auto-scaling-group \
 #### **Storage Classes và Use Cases**
 
 **Standard (Frequent Access)**
+- **Mô tả tổng quan**: "Kho hàng cao cấp 24/7". Giống như kho hàng trong siêu thị - hàng được đặt ở vị trí dễ lấy nhất, nhân viên luôn sẵn sàng, lấy hàng trong vài giây, nhưng chi phí thuê mặt bằng cao nhất.
+- **Chức năng chính**: Instant access, high durability, frequent retrieval optimization
+- **Sử dụng khi nào**: Website assets, mobile apps, content distribution, frequently accessed data
+- **Kết quả trả về**: Millisecond access, 99.99% availability, immediate retrieval
 - **Durability**: 99.999999999% (11 9's)
 - **Availability**: 99.99%
 - **Pricing**: $0.023/GB/month
 - **Use case**: Active data, websites, content distribution
 
 **Standard-IA (Infrequent Access)**
+- **Mô tả tổng quan**: "Kho hàng ít dùng". Giống như kho hàng ở tầng 2 - hàng ít lấy, thuê rẻ hơn nhưng mỗi lần lấy phải trả phí thêm cho nhân viên lên lầu.
+- **Chức năng chính**: Lower storage cost, retrieval fee, same durability as Standard
+- **Sử dụng khi nào**: Backups, disaster recovery, long-term storage với occasional access
+- **Kết quả trả về**: Cost savings, quick access when needed, retrieval charges apply
 - **Pricing**: $0.0125/GB/month + retrieval fee
 - **Minimum**: 30 days storage, 128KB object size
 - **Use case**: Backups, disaster recovery
 
 **One Zone-IA**
+- **Mô tả tổng quan**: "Kho hàng giá rẻ một địa điểm". Giống như thuê kho ở vùng ven, giá rẻ nhưng rủi ro cao hơn - nếu vùng đó ngập lụt thì mất hàng.
+- **Chức năng chính**: Lower cost than Standard-IA, single AZ storage, same access speed
+- **Sử dụng khi nào**: Secondary backup copies, reproducible data, cost-sensitive storage
+- **Kết quả trả về**: Lowest IA cost, single point of failure risk
 - **Pricing**: $0.01/GB/month
 - **Availability**: 99.5% (single AZ)
 - **Use case**: Secondary backup copies
 
 **Glacier Storage Classes**
-- **Glacier Instant Retrieval**: $0.004/GB/month, milliseconds retrieval
-- **Glacier Flexible Retrieval**: $0.0036/GB/month, minutes to hours
-- **Glacier Deep Archive**: $0.00099/GB/month, 12 hours retrieval
+- **Glacier Instant Retrieval**: "Kho lạnh cao cấp". Giống như kho lạnh công nghệ cao - hàng đông lạnh để bảo quản lâu, nhưng có robot lấy hàng tức thì khi cần.
+  - **Chức năng chính**: Long-term storage, instant retrieval, very low cost
+  - **Sử dụng khi nào**: Archive data cần access ngay lập tức nhưng hiếm khi dùng
+  - **Kết quả trả về**: Instant access, significant cost savings, long-term preservation
+  - $0.004/GB/month, milliseconds retrieval
+- **Glacier Flexible Retrieval**: "Kho lạnh thông thường". Giống như kho lạnh truyền thống - hàng đông cứng, cần thời gian rã đông trước khi dùng được.
+  - **Chức năng chính**: Flexible retrieval options (minutes to hours), very low storage cost
+  - **Sử dụng khi nào**: Archive data, compliance, long-term backups
+  - **Kết quả trả về**: Ultra-low storage cost, configurable retrieval time
+  - $0.0036/GB/month, minutes to hours
+- **Glacier Deep Archive**: "Kho lạnh sâu". Giống như hầm trữ đông sâu - hàng đông cứng như đá, cần nửa ngày để rã đông, nhưng chi phí cực thấp.
+  - **Chức năng chính**: Lowest cost storage, long retrieval time, compliance-focused
+  - **Sử dụng khi nào**: Long-term compliance, rarely accessed archives, tape replacement
+  - **Kết quả trả về**: Minimum storage cost, 12-hour retrieval time
+  - $0.00099/GB/month, 12 hours retrieval
 
 #### **Core Features và Triển khai**
 
@@ -669,6 +800,10 @@ aws s3api put-bucket-replication \
 #### **Core Features**
 
 **Multi-AZ Deployment**
+- **Mô tả tổng quan**: "Database có phó bản tự động". Giống như có 2 kế toán trưởng - người chính ghi sổ, người phụ copy y hệt ngay lập tức. Nếu người chính ốm, người phụ lên thay ngay không cần training.
+- **Chức năng chính**: Synchronous replication, automatic failover, zero data loss, maintenance without downtime
+- **Sử dụng khi nào**: Production databases, critical applications, compliance requirements, zero-downtime maintenance
+- **Kết quả trả về**: High availability, automatic recovery, data protection, seamless failover
 - **Chức năng**: Automatic failover đến standby instance
 - **RTO**: 1-2 minutes
 - **Pricing**: 2x cost của single-AZ
@@ -685,6 +820,10 @@ aws rds create-db-instance \
 ```
 
 **Read Replicas**
+- **Mô tả tổng quan**: "Nhân viên tư vấn chuyên đọc". Giống như có thêm nhân viên chỉ chuyên trả lời câu hỏi khách hàng (read queries) để nhân viên chính tập trung xử lý đơn hàng (write operations). Khách hỏi gì cũng được, nhưng không thể đặt hàng qua nhân viên tư vấn.
+- **Chức năng chính**: Asynchronous replication, read scaling, cross-region support, offload read traffic
+- **Sử dụng khi nào**: Read-heavy workloads, reporting, analytics, geographic distribution
+- **Kết quả trả về**: Improved read performance, reduced load on primary, global data distribution
 - **Chức năng**: Asynchronous replication cho read scaling
 - **Limit**: Up to 5 read replicas
 - **Cross-Region**: Supported
@@ -704,14 +843,18 @@ aws rds create-db-instance \
 ### **6.4 AWS Lambda - Serverless Compute**
 
 #### **Khái niệm cơ bản**
-- **Serverless**: Không cần quản lý servers
-- **Event-driven**: Chạy code khi có events
-- **Function**: Unit of deployment và scaling
-- **Runtime**: Execution environment (Node.js, Python, Java, etc.)
+- **Serverless**: "Thuê lập trình viên theo giờ". Giống như gọi thợ sửa ống nước - chỉ trả tiền khi thực sự cần, không phải nuôi thợ cả tháng. AWS lo tất cả, bạn chỉ cần viết code.
+- **Event-driven**: "Nhân viên chỉ làm khi có chuông báo". Chỉ chạy khi có events (file upload, HTTP request, database change), không chạy thì không tốn tiền.
+- **Function**: "Đoạn code nhỏ làm 1 việc cụ thể". Giống như app mini - nhận input, xử lý, trả output, rồi tắt.
+- **Runtime**: "Môi trường chạy code" - hỗ trợ nhiều ngôn ngữ lập trình
 
 #### **Core Features**
 
 **Execution Model**
+- **Mô tả tổng quan**: "Nhân viên làm việc theo ca". Mỗi lần có việc, AWS thuê nhân viên mới (cold start - hơi chậm lần đầu), nhưng nếu liên tục có việc thì nhân viên đó ở lại (warm - nhanh hơn). Tối đa 15 phút/ca, sau đó nghỉ.
+- **Chức năng chính**: On-demand execution, automatic scaling, pay-per-use, managed infrastructure
+- **Sử dụng khi nào**: Event processing, APIs, data transformation, automation tasks
+- **Kết quả trả về**: Processed events, API responses, transformed data, automated actions
 - **Timeout**: Maximum 15 minutes
 - **Memory**: 128MB to 10,240MB
 - **Concurrent executions**: 1,000 default limit
@@ -751,6 +894,10 @@ aws lambda create-function \
 #### **Core Features**
 
 **CloudWatch Metrics**
+- **Mô tả tổng quan**: "Đồng hồ đo hiệu suất tự động". Giống như dashboard xe hơi - liên tục hiển thị tốc độ (CPU), nhiên liệu (memory), nhiệt độ engine, cảnh báo khi có vấn đề. AWS tự động thu thập, bạn chỉ cần xem biểu đồ.
+- **Chức năng chính**: Automatic metric collection, custom metric support, data visualization, historical analysis
+- **Sử dụng khi nào**: Monitor application performance, track resource utilization, troubleshoot issues, capacity planning
+- **Kết quả trả về**: Performance graphs, trend analysis, threshold alerts, operational insights
 - **Default Metrics**: CPU, Network, Disk (không có Memory)
 - **Custom Metrics**: Application-specific metrics
 - **Pricing**: $0.30/metric/month
@@ -764,6 +911,10 @@ aws cloudwatch put-metric-data \
 ```
 
 **CloudWatch Alarms**
+- **Mô tả tổng quan**: "Hệ thống báo động thông minh". Giống như báo cháy trong building - theo dõi liên tục, khi nhiệt độ (CPU) vượt ngưỡng thì kêu báo, gửi tin nhắn cho bảo vệ (SNS), thậm chí tự động bật sprinkler (Auto Scaling).
+- **Chức năng chính**: Threshold monitoring, automated actions, notification sending, state tracking
+- **Sử dụng khi nào**: Proactive monitoring, automated scaling, incident response, SLA monitoring
+- **Kết quả trả về**: Real-time alerts, automated responses, state change notifications, operational actions
 - **States**: OK, ALARM, INSUFFICIENT_DATA
 - **Actions**: SNS notifications, Auto Scaling, EC2 actions
 - **Pricing**: $0.10/alarm/month
@@ -802,6 +953,10 @@ aws cloudwatch put-metric-alarm \
 #### **Core Features**
 
 **Caching Behavior**
+- **Mô tả tổng quan**: "Hệ thống kho hàng toàn cầu thông minh". Giống như chuỗi cửa hàng tiện lợi - lưu hàng bán chạy ở gần khách hàng, tự động bổ sung khi hết, quyết định hàng nào nên giữ bao lâu dựa trên tần suất mua.
+- **Chức năng chính**: Global content caching, automatic cache management, intelligent content delivery, edge optimization
+- **Sử dụng khi nào**: Website acceleration, media streaming, API acceleration, global content distribution
+- **Kết quả trả về**: Faster load times, reduced origin load, improved user experience, global availability
 - **TTL**: Time To Live cho cached objects
 - **Cache-Control Headers**: Control caching behavior
 - **Query String Parameters**: Include/exclude from cache key
@@ -841,10 +996,14 @@ aws cloudfront create-distribution \
 ### **6.7 Elastic Load Balancing - Load Distribution**
 
 #### **Application Load Balancer (ALB)**
-- **Layer**: 7 (Application layer)
-- **Features**: Content-based routing, SSL termination, WebSocket
-- **Targets**: EC2, IP addresses, Lambda functions
+- **Mô tả tổng quan**: "Nhân viên phân luồng thông minh". Giống như receptionist cao cấp - không chỉ phân khách đến quầy trống mà còn hiểu nội dung (đọc được HTTP headers), chuyển khách VIP đến phòng đặc biệt, khách thường đến quầy bình thường.
+- **Chức năng chính**: Layer 7 load balancing, content-based routing, SSL termination, WebSocket support
+- **Sử dụng khi nào**: Web applications, microservices, cần routing dựa trên URL/headers, SSL offloading
+- **Kết quả trả về**: Distributed traffic, improved performance, SSL termination, health-based routing
+- **Type**: Managed service
 - **Pricing**: $0.0225/hour + $0.008/LCU-hour
+- **Vị trí**: VPC, multi-AZ
+- **Features**: Layer 7, SSL termination, content-based routing
 
 **Core Features**:
 - **Path-based routing**: Route based on URL path
@@ -865,11 +1024,15 @@ aws elbv2 create-target-group \
     --health-check-path /health
 ```
 
-#### **Network Load Balancer (NLB)**
-- **Layer**: 4 (Transport layer)
-- **Features**: Ultra-low latency, static IP, TCP/UDP
-- **Performance**: Millions of requests per second
+**Network Load Balancer (NLB)**
+- **Mô tả tổng quan**: "Bảo vệ siêu tốc". Giống như traffic cop chuyên nghiệp - không cần đọc giấy tờ, chỉ nhìn biển số xe (IP/Port) là phân luồng ngay lập tức, tốc độ cực nhanh, độ trễ cực thấp.
+- **Chức năng chính**: Layer 4 load balancing, ultra-low latency, static IP support, TCP/UDP handling
+- **Sử dụng khi nào**: High-performance applications, gaming, IoT, cần static IP, extreme low latency
+- **Kết quả trả về**: Ultra-fast routing, consistent IP addresses, millions of requests/second
+- **Type**: Managed service  
 - **Pricing**: $0.0225/hour + $0.006/NLCU-hour
+- **Vị trí**: VPC, multi-AZ
+- **Features**: Layer 4, ultra-low latency, static IP
 
 #### **Gateway Load Balancer (GWLB)**
 - **Use case**: Third-party virtual appliances
@@ -887,13 +1050,34 @@ aws elbv2 create-target-group \
 #### **Core Features**
 
 **Routing Policies**
-- **Simple**: Single resource
-- **Weighted**: Distribute traffic by percentage
-- **Latency-based**: Route to lowest latency
-- **Failover**: Primary/secondary setup
-- **Geolocation**: Route based on user location
-- **Geoproximity**: Route based on geographic proximity
-- **Multivalue**: Return multiple IP addresses
+- **Simple**: "Chỉ đường đơn giản". Giống như biển báo đường - chỉ 1 hướng duy nhất, tất cả đều đi theo đường đó.
+  - **Chức năng**: Single resource mapping, basic DNS resolution
+  - **Sử dụng khi nào**: Simple websites, single server applications
+  - **Kết quả**: All traffic goes to one destination
+- **Weighted**: "Phân chia theo tỷ lệ". Giống như chia khách hàng - 70% đến cửa hàng A, 30% đến cửa hàng B để test hiệu quả.
+  - **Chức năng**: Distribute traffic by percentage, A/B testing support
+  - **Sử dụng khi nào**: Blue-green deployments, A/B testing, gradual rollouts
+  - **Kết quả**: Controlled traffic distribution, testing capabilities
+- **Latency-based**: "Chọn đường gần nhất". Giống như GPS chọn đường ít kẹt xe - tự động chỉ đến server gần nhất để giảm độ trễ.
+  - **Chức năng**: Route to lowest latency endpoint, performance optimization
+  - **Sử dụng khi nào**: Global applications, performance-critical services
+  - **Kết quả**: Improved user experience, reduced latency
+- **Failover**: "Đường dự phòng". Giống như có đường chính và đường phụ - bình thường đi đường chính, khi tắc đường thì tự động chuyển sang đường phụ.
+  - **Chức năng**: Primary/secondary setup, automatic failover
+  - **Sử dụng khi nào**: High availability requirements, disaster recovery
+  - **Kết quả**: Automatic failover, business continuity
+- **Geolocation**: "Chỉ đường theo địa chỉ". Giống như hệ thống phân phối - khách Hà Nội đến kho Hà Nội, khách TP.HCM đến kho TP.HCM.
+  - **Chức năng**: Route based on user geographic location, content localization
+  - **Sử dụng khi nào**: Content localization, compliance requirements, regional services
+  - **Kết quả**: Localized content, regulatory compliance
+- **Geoproximity**: "Chỉ đường theo khoảng cách có điều chỉnh". Giống như GPS có thể điều chỉnh - server gần nhưng đang quá tải thì chuyển hướng đến server xa hơn nhưng rảnh hơn.
+  - **Chức năng**: Route based on geographic proximity with bias adjustment
+  - **Sử dụng khi nào**: Load balancing with geographic considerations, capacity management
+  - **Kết quả**: Optimized geographic distribution, flexible traffic control
+- **Multivalue**: "Đưa nhiều lựa chọn". Giống như GPS đưa 3 tuyến đường khác nhau, để thiết bị tự chọn tuyến nào đi.
+  - **Chức năng**: Return multiple IP addresses, client-side load balancing
+  - **Sử dụng khi nào**: Simple load balancing, multiple healthy endpoints
+  - **Kết quả**: Multiple options for clients, basic redundancy
 
 **Health Checks**
 - **Endpoint monitoring**: HTTP, HTTPS, TCP
@@ -929,6 +1113,10 @@ aws route53 change-resource-record-sets \
 ### **7.1 Multi-Tier Architecture Pattern**
 
 #### **3-Tier Architecture**
+- **Mô tả tổng quan**: "Tòa nhà 3 tầng chuyên dụng". Tầng 1 (Presentation) đón khách, tầng 2 (Application) xử lý công việc, tầng 3 (Database) lưu trữ hồ sơ. Mỗi tầng có bảo vệ riêng, chỉ tầng trên mới liên lạc được với tầng dưới.
+- **Chức năng chính**: Separation of concerns, scalability per tier, security isolation, maintainability
+- **Sử dụng khi nào**: Traditional web applications, enterprise systems, clear business logic separation
+- **Kết quả trả về**: Scalable architecture, security layers, maintainable codebase, fault isolation
 ```
 Presentation Tier (Public Subnet)
 ├── ALB + CloudFront
@@ -955,6 +1143,10 @@ Data Tier (Private Subnet)
 ### **7.2 Microservices Architecture Pattern**
 
 #### **Container-based Microservices**
+- **Mô tả tổng quan**: "Khu phố các cửa hàng chuyên môn". Thay vì 1 siêu thị lớn, có nhiều cửa hàng nhỏ chuyên về 1 lĩnh vực (User shop, Product shop, Payment shop). Mỗi shop tự quản lý, có thể mở rộng riêng, nếu 1 shop đóng cửa thì các shop khác vẫn hoạt động.
+- **Chức năng chính**: Service independence, technology diversity, fault isolation, independent scaling
+- **Sử dụng khi nào**: Large applications, multiple teams, rapid development, technology flexibility needs
+- **Kết quả trả về**: Faster development, better fault tolerance, independent deployments, technology choices
 ```
 API Gateway
 ├── Authentication Service (Lambda)
@@ -979,6 +1171,10 @@ Data Layer
 ### **7.3 Event-Driven Architecture Pattern**
 
 #### **Serverless Event Processing**
+- **Mô tả tổng quan**: "Hệ thống phản ứng chuỗi tự động". Giống như domino - khi có sự kiện xảy ra (file upload, user click, timer), nó kích hoạt chuỗi phản ứng tự động (resize image, send email, update database) mà không cần ai điều khiển.
+- **Chức năng chính**: Event-driven processing, loose coupling, automatic scaling, real-time responses
+- **Sử dụng khi nào**: Real-time processing, IoT applications, workflow automation, reactive systems
+- **Kết quả trả về**: Real-time processing, automatic responses, scalable event handling, loose coupling
 ```
 Event Sources
 ├── S3 (Object events)
@@ -1000,28 +1196,32 @@ Storage Layer
 ### **7.4 Disaster Recovery Patterns**
 
 #### **Backup and Restore**
-- **RTO**: Hours
-- **RPO**: Hours
-- **Cost**: Lowest
-- **Implementation**: S3 backups, AMI snapshots
+- **Mô tả tổng quan**: "Sao lưu đơn giản như chụp ảnh". Giống như chụp ảnh tài liệu quan trọng lưu trong két sắt - khi cần thì lấy ra photo lại, mất vài giờ nhưng chi phí thấp nhất.
+- **Chức năng chính**: Data backup, long-term storage, cost-effective recovery
+- **Sử dụng khi nào**: Non-critical systems, cost-sensitive environments, acceptable downtime
+- **Kết quả trả về**: Data protection, lowest cost, longer recovery time
+- **RTO**: Hours, **RPO**: Hours, **Cost**: Lowest
 
 #### **Pilot Light**
-- **RTO**: 10s of minutes
-- **RPO**: Minutes
-- **Cost**: Medium
-- **Implementation**: Core services running in DR region
+- **Mô tả tổng quan**: "Lò sưởi dự phòng". Giống như có lò sưởi backup luôn có lửa nhỏ - khi lò chính hỏng, chỉ cần thêm củi vào lò backup là có lửa lớn ngay, nhanh hơn đốt từ đầu.
+- **Chức năng chính**: Minimal running infrastructure, quick scale-up capability
+- **Sử dụng khi nào**: Critical systems with moderate RTO requirements
+- **Kết quả trả về**: Faster recovery than backup/restore, moderate cost
+- **RTO**: 10s of minutes, **RPO**: Minutes, **Cost**: Medium
 
 #### **Warm Standby**
-- **RTO**: Minutes
-- **RPO**: Seconds
-- **Cost**: Higher
-- **Implementation**: Scaled-down version running
+- **Mô tả tổng quan**: "Xe dự phòng luôn nổ máy". Giống như có xe backup luôn nổ máy sẵn - khi xe chính hỏng, nhảy sang xe backup và tăng tốc ngay lập tức.
+- **Chức năng chính**: Scaled-down version always running, quick scale-up
+- **Sử dụng khi nào**: Business-critical applications, short RTO requirements
+- **Kết quả trả về**: Quick recovery, higher availability, higher cost
+- **RTO**: Minutes, **RPO**: Seconds, **Cost**: Higher
 
 #### **Multi-Site Active/Active**
-- **RTO**: Seconds
-- **RPO**: Near zero
-- **Cost**: Highest
-- **Implementation**: Full deployment in multiple regions
+- **Mô tả tổng quan**: "Hai văn phòng hoạt động song song". Giống như có 2 văn phòng cùng làm việc - nếu văn phòng này gặp sự cố, văn phòng kia tiếp tục ngay không gián đoạn.
+- **Chức năng chính**: Full redundancy, zero downtime, load distribution
+- **Sử dụng khi nào**: Mission-critical systems, zero downtime requirements
+- **Kết quả trả về**: No downtime, immediate failover, highest cost
+- **RTO**: Seconds, **RPO**: Near zero, **Cost**: Highest
 
 ## **CHƯƠNG 8: COST OPTIMIZATION STRATEGIES**
 
@@ -1173,22 +1373,26 @@ S3 (Static content + backups)
 - Workload: Batch processing + web application
 
 ### **Bài tập 4**: VPC Design Challenge
+- **Mô tả tổng quan**: "Thiết kế khu đô thị thông minh". Tạo một khu phố có đầy đủ tiện ích - khu dân cư (private subnets), khu thương mại (public subnets), hệ thống an ninh (security groups), cổng ra vào (gateways).
 - **Yêu cầu**: 
-  - Multi-AZ deployment
-  - Public và Private subnets
-  - NAT Gateway cho outbound internet access
-  - Security Groups và NACLs
+  - Multi-AZ deployment cho high availability
+  - Public và Private subnets với proper routing
+  - NAT Gateway cho outbound internet access từ private subnets
+  - Security Groups và NACLs cho defense in depth
 - **CIDR Planning**:
-  - VPC: 10.0.0.0/16
-  - Public Subnets: 10.0.1.0/24, 10.0.2.0/24
-  - Private Subnets: 10.0.10.0/24, 10.0.20.0/24
-  - Database Subnets: 10.0.100.0/24, 10.0.200.0/24
+  - VPC: 10.0.0.0/16 (65,536 IPs)
+  - Public Subnets: 10.0.1.0/24, 10.0.2.0/24 (256 IPs each)
+  - Private Subnets: 10.0.10.0/24, 10.0.20.0/24 (256 IPs each)
+  - Database Subnets: 10.0.100.0/24, 10.0.200.0/24 (256 IPs each)
+- **Kết quả mong đợi**: Secure, scalable network foundation
 
 ### **Bài tập 5**: Microservices với Container
-- **Services**: User, Product, Order, Payment
-- **Container Platform**: ECS Fargate hoặc EKS
-- **Service Communication**: API Gateway + ALB
-- **Data Storage**: DynamoDB + RDS + ElastiCache
+- **Mô tả tổng quan**: "Xây dựng khu phố dịch vụ hiện đại". Tạo hệ thống các dịch vụ độc lập, mỗi service như một cửa hàng chuyên môn, có thể scale riêng biệt.
+- **Services**: User (quản lý tài khoản), Product (catalog sản phẩm), Order (xử lý đơn hàng), Payment (thanh toán)
+- **Container Platform**: ECS Fargate (serverless containers) hoặc EKS (Kubernetes)
+- **Service Communication**: API Gateway làm cổng chính + ALB cho internal routing
+- **Data Storage**: DynamoDB (NoSQL), RDS (relational), ElastiCache (caching)
+- **Kết quả mong đợi**: Scalable, maintainable microservices architecture
 
 ---
 
